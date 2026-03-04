@@ -1,0 +1,150 @@
+// app/page.tsx
+"use client";
+
+import { useState, useEffect } from "react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useRouter } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { CalendarDays, TrendingUp, BarChart3, Target } from "lucide-react";
+
+export default function HomePage() {
+  const supabase = createClientComponentClient();
+  const router = useRouter();
+
+  const [session, setSession] = useState<any>(null);
+  const [players, setPlayers] = useState<any[]>([]);
+  const [leagues, setLeagues] = useState<any[]>([]);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+    });
+    fetchPlayers();
+    fetchLeagues();
+  }, []);
+
+  const fetchPlayers = async () => {
+    const { data } = await supabase.from("players").select("*");
+    if (data) setPlayers(data);
+  };
+
+  const fetchLeagues = async () => {
+    const { data } = await supabase.from("leagues").select("*");
+    if (data) setLeagues(data);
+  };
+
+  const signIn = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+    });
+    if (error) console.log(error.message);
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+  };
+
+  return (
+    <div className="min-h-screen bg-black text-white">
+      {/* HERO */}
+      <section className="flex flex-col items-center justify-center text-center py-20 px-6 bg-gradient-to-b from-red-900/40 to-black">
+        <h1 className="text-5xl md:text-7xl font-extrabold mb-4 tracking-widest">
+          NOVA REAPERS
+        </h1>
+        <p className="text-gray-400 max-w-2xl text-lg mb-6">
+          Türkiye PUBG Platformu — Oyuncu Gelişimi, Lig & Performans Analizi
+        </p>
+        {!session ? (
+          <Button
+            className="rounded-2xl px-8 py-4 text-lg bg-red-600 hover:bg-red-700"
+            onClick={signIn}
+          >
+            Google ile Giriş
+          </Button>
+        ) : (
+          <Button
+            className="rounded-2xl px-8 py-4 text-lg bg-red-600 hover:bg-red-700"
+            onClick={signOut}
+          >
+            Çıkış Yap
+          </Button>
+        )}
+      </section>
+
+      {/* PLAYERS PANEL */}
+      <section className="py-16 px-6 bg-gray-950">
+        <h2 className="text-3xl font-bold text-center mb-10">
+          Oyuncular ve Gelişim
+        </h2>
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {players.map((p) => (
+            <Card key={p.id} className="bg-gray-900 rounded-2xl shadow-xl">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold mb-2">{p.nickname}</h3>
+                <p className="text-gray-400 mb-4">{p.game}</p>
+                <Progress value={Math.random() * 100} className="mb-2" />
+                <Progress value={Math.random() * 100} className="mb-2" />
+                <Progress value={Math.random() * 100} />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* LEAGUES */}
+      <section className="py-16 px-6">
+        <h2 className="text-3xl font-bold text-center mb-10">Ligler</h2>
+        <div className="max-w-3xl mx-auto grid gap-4">
+          {leagues.map((l) => (
+            <Card key={l.id} className="bg-gray-900 rounded-2xl shadow-xl">
+              <CardContent className="p-4 flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-bold">{l.name}</h3>
+                  <p className="text-gray-400">{l.type} — {l.status}</p>
+                </div>
+                <CalendarDays size={28} />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* PERFORMANCE */}
+      <section className="py-16 px-6 bg-gray-950">
+        <h2 className="text-3xl font-bold text-center mb-10">
+          Performans Analizi
+        </h2>
+        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <Card className="bg-gray-900 rounded-2xl shadow-xl text-center p-6">
+            <TrendingUp size={36} className="mx-auto mb-3" />
+            <h3 className="font-bold mb-2">İstatistik Takibi</h3>
+            <p className="text-gray-400 text-sm">
+              Maç başı detaylı veri analizi ve gelişim raporları.
+            </p>
+          </Card>
+          <Card className="bg-gray-900 rounded-2xl shadow-xl text-center p-6">
+            <BarChart3 size={36} className="mx-auto mb-3" />
+            <h3 className="font-bold mb-2">Grafiksel Raporlama</h3>
+            <p className="text-gray-400 text-sm">
+              Haftalık performans trendleri ve ilerleme grafikleri.
+            </p>
+          </Card>
+          <Card className="bg-gray-900 rounded-2xl shadow-xl text-center p-6">
+            <Target size={36} className="mx-auto mb-3" />
+            <h3 className="font-bold mb-2">Hedef Sistemi</h3>
+            <p className="text-gray-400 text-sm">
+              Oyuncular için bireysel gelişim hedefleri ve görev takibi.
+            </p>
+          </Card>
+        </div>
+      </section>
+
+      <footer className="py-8 text-center text-gray-500 border-t border-gray-800">
+        © {new Date().getFullYear()} NOVA REAPERS. Tüm hakları saklıdır.
+      </footer>
+    </div>
+  );
+}
